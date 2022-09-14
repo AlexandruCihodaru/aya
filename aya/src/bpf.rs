@@ -272,6 +272,7 @@ impl<'a> BpfLoader<'a> {
     /// ```
     ///
     pub fn map_pin_path<P: AsRef<Path>>(&mut self, path: P) -> &mut BpfLoader<'a> {
+        println!("Set base");
         self.map_pin_path = Some(path.as_ref().to_owned());
         self
     }
@@ -366,6 +367,7 @@ impl<'a> BpfLoader<'a> {
     /// # Ok::<(), aya::BpfError>(())
     /// ```
     pub fn load_file<P: AsRef<Path>>(&mut self, path: P) -> Result<Bpf, BpfError> {
+        println!("loading binary");
         let path = path.as_ref();
         self.load(&fs::read(path).map_err(|error| BpfError::FileError {
             path: path.to_owned(),
@@ -389,6 +391,7 @@ impl<'a> BpfLoader<'a> {
         let verifier_log_level = self.verifier_log_level.bits;
         let mut obj = Object::parse(data)?;
         obj.patch_map_data(self.globals.clone())?;
+        println!("main load");
 
         let btf_fd = if self.features.btf {
             if let Some(ref mut obj_btf) = obj.btf {
@@ -428,6 +431,7 @@ impl<'a> BpfLoader<'a> {
                 pinned: false,
                 btf_fd,
             };
+            println!("{:?} {:?}", map, map.obj.pinning());
             let fd = match map.obj.pinning() {
                 PinningType::ByName => {
                     let path = match &self.map_pin_path {
@@ -441,6 +445,7 @@ impl<'a> BpfLoader<'a> {
                             fd as RawFd
                         }
                         Err(_) => {
+                            println!("we should actually be here {:?} {:?}", name, path);
                             let fd = map.create(&name)?;
                             map.pin(&name, path).map_err(|error| MapError::PinError {
                                 name: Some(name.to_string()),
